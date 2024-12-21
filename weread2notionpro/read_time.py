@@ -1,22 +1,18 @@
-import argparse
 from datetime import datetime
 from datetime import timedelta
-import json
 import os
-import time
 
 import pendulum
 
-from notion_helper import NotionHelper
-from weread_api import WeReadApi
-from utils import (
+from weread2notionpro.weread_api import WeReadApi
+from weread2notionpro.notion_helper import NotionHelper
+from weread2notionpro.utils import (
     format_date,
     get_date,
     get_icon,
     get_number,
     get_relation,
     get_title,
-    get_embed,
 )
 
 
@@ -80,10 +76,12 @@ def get_file():
         print("OUT_FOLDER does not exist.")
         return None
 
+HEATMAP_GUIDE = "https://mp.weixin.qq.com/s?__biz=MzI1OTcxOTI4NA==&mid=2247484145&idx=1&sn=81752852420b9153fc292b7873217651&chksm=ea75ebeadd0262fc65df100370d3f983ba2e52e2fcde2deb1ed49343fbb10645a77570656728&token=157143379&lang=zh_CN#rd"
 
-if __name__ == "__main__":
-    notion_helper = NotionHelper()
-    weread_api = WeReadApi()
+
+notion_helper = NotionHelper()
+weread_api = WeReadApi()
+def main():
     image_file = get_file()
     if image_file:
         image_url = f"https://raw.githubusercontent.com/{os.getenv('REPOSITORY')}/{os.getenv('REF').split('/')[-1]}/OUT_FOLDER/{image_file}"
@@ -93,9 +91,9 @@ if __name__ == "__main__":
                 block_id=notion_helper.heatmap_block_id, url=heatmap_url
             )
         else:
-            response = notion_helper.append_blocks(
-                block_id=notion_helper.page_id, children=[get_embed(heatmap_url)]
-            )
+            print(f"更新热力图失败，没有添加热力图占位。具体参考：{HEATMAP_GUIDE}")
+    else:
+        print(f"更新热力图失败，没有生成热力图。具体参考：{HEATMAP_GUIDE}")
     api_data = weread_api.get_api_data()
     readTimes = {int(key): value for key, value in api_data.get("readTimes").items()}
     now = pendulum.now("Asia/Shanghai").start_of("day")
@@ -114,3 +112,5 @@ if __name__ == "__main__":
                 insert_to_notion(page_id=id, timestamp=timestamp, duration=value)
     for key, value in readTimes.items():
         insert_to_notion(None, int(key), value)
+if __name__ == "__main__":
+    main()
